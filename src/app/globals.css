@@ -1,26 +1,215 @@
 @import "tailwindcss";
 
+@theme {
+  --color-forest: #1B5E20;
+  --color-forest-dark: #0d3810;
+  --color-forest-light: #2E7D32;
+  --color-emerald-green: #388E3C;
+  --color-moss: #8D99AE;
+  --color-cyan-water: #00bcd4;
+  --color-mist-cyan: #e0f7fa;
+  --color-sunrise-gold: #ffb300;
+  --color-soft-bg-light: #f4f7f6;
+  --color-soft-bg-dark: #08140c;
+
+  --font-sans: var(--font-inter), sans-serif;
+  --font-title: var(--font-poppins), sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f4f7f6;
+  --foreground: #1c2e24;
+  --card-bg: rgba(255, 255, 255, 0.7);
+  --card-border: rgba(255, 255, 255, 0.4);
+  --shadow-color: rgba(27, 94, 32, 0.08);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+.dark {
+  --background: #060e0a;
+  --foreground: #eef5f0;
+  --card-bg: rgba(6, 14, 10, 0.6);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --shadow-color: rgba(0, 0, 0, 0.3);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.5s ease, color 0.5s ease;
+  overflow-x: hidden;
+  position: relative;
 }
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 8px 32px 0 var(--shadow-color);
+}
+
+.glass-panel-heavy {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.dark .glass-panel-heavy {
+  background: rgba(6, 14, 10, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-button {
+  background: rgba(46, 125, 50, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(46, 125, 50, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-button:hover {
+  background: rgba(46, 125, 50, 0.25);
+  border-color: rgba(46, 125, 50, 0.4);
+  transform: translateY(-2px);
+}
+
+/* Soft Neumorphism */
+.neumorphic-inset {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.05), inset -2px -2px 5px rgba(255, 255, 255, 0.7);
+}
+
+.dark .neumorphic-inset {
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.02);
+}
+
+/* Text Gradient */
+.text-gradient-forest {
+  background: linear-gradient(135deg, #1B5E20 0%, #00897B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dark .text-gradient-forest {
+  background: linear-gradient(135deg, #a5d6a7 0%, #4db6ac 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2E7D32;
+  border-radius: 5px;
+  border: 2px solid var(--background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1B5E20;
+}
+
+/* Custom Scroll reveal class */
+.reveal-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+.reveal-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 3D Parallax Scrolling Container */
+.parallax-container {
+  perspective: 1px;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.parallax-layer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+
+/* Interactive Water Ripple Overlay */
+.water-ripple {
+  background: radial-gradient(circle, rgba(0, 188, 212, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+/* Fallback & Loader Keyframes and Classes (Avoids styled-jsx hydration mismatches) */
+@keyframes cloudDrift {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes sway {
+  0%, 100% { transform: rotate(0deg); transform-origin: bottom center; }
+  50% { transform: rotate(2deg); transform-origin: bottom center; }
+}
+@keyframes leafFall {
+  0% {
+    top: -10%;
+    transform: translateX(0) rotate(0deg);
+    opacity: 0;
+  }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% {
+    top: 105%;
+    transform: translateX(80px) rotate(360deg);
+    opacity: 0;
+  }
+}
+@keyframes waterFlow {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 200px; }
+}
+@keyframes waterfallLoader {
+  0% { transform: translateY(-50%); }
+  100% { transform: translateY(0); }
+}
+
+.animate-cloud-drift {
+  animation: cloudDrift 40s linear infinite;
+}
+.animate-sway {
+  animation: sway 5s ease-in-out infinite;
+}
+.animate-leaf-fall-1 {
+  animation: leafFall 12s linear infinite;
+}
+.animate-leaf-fall-2 {
+  animation: leafFall 15s linear infinite 2s;
+}
+.animate-leaf-fall-3 {
+  animation: leafFall 18s linear infinite 4s;
+}
+.animate-water-flow {
+  animation: waterFlow 1.5s linear infinite;
+  background-size: 100% 200px;
+  background-image: linear-gradient(to bottom, #80deea, #00acc1, #80deea);
+}
+.animate-waterfall-loader {
+  animation: waterfallLoader 1s linear infinite;
+}
+
