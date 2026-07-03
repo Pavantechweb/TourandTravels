@@ -1,22 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Trees, Sparkles, Droplets } from "lucide-react";
+import { Trees, Compass, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function IntroLoader({ onComplete }: { onComplete: () => void }) {
   const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState("Whispering bamboo canopy...");
+  const [status, setStatus] = useState("Connecting to TravelPal gateway...");
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    // Shifting status messages to match the local states
+    // Standard travel booking database status prompts
     const statusMessages = [
-      "Whispering bamboo canopy...",
-      "Pouring fresh Athirappilly cascades...",
-      "Elevating Sahyadri mountain mist...",
-      "Tuning local wind cycles...",
-      "Connecting carbon-neutral gateway...",
+      "Connecting to TravelPal gateway...",
+      "Retrieving luxury eco-lodge reservations...",
+      "Loading Kyoto & Western Ghats travel guides...",
+      "Synchronizing carbon-neutral flight logs...",
+      "Preparing your bespoke nature sanctuary itinerary...",
     ];
 
     const messageInterval = setInterval(() => {
@@ -25,7 +25,7 @@ export default function IntroLoader({ onComplete }: { onComplete: () => void }) 
         const nextIdx = (currentIdx + 1) % statusMessages.length;
         return statusMessages[nextIdx];
       });
-    }, 800);
+    }, 850);
 
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
@@ -34,13 +34,13 @@ export default function IntroLoader({ onComplete }: { onComplete: () => void }) 
           clearInterval(messageInterval);
           setTimeout(() => {
             setIsVisible(false);
-            setTimeout(onComplete, 800); // Wait for fade-out exit
-          }, 400);
+            setTimeout(onComplete, 800); // Wait for exit animation
+          }, 300);
           return 100;
         }
-        return prev + 4;
+        return prev + 4; // increments smoothly
       });
-    }, 100);
+    }, 90);
 
     return () => {
       clearInterval(progressInterval);
@@ -53,59 +53,78 @@ export default function IntroLoader({ onComplete }: { onComplete: () => void }) 
       {isVisible && (
         <motion.div
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, y: -50 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.8, ease: "easeInOut" }}
-          className="fixed inset-0 z-[100] bg-gradient-to-b from-[#05110a] to-[#030905] flex flex-col items-center justify-center text-center p-6 select-none"
+          className="fixed inset-0 w-screen h-screen z-[100] flex flex-col items-center justify-center text-center p-0 m-0 select-none overflow-hidden bg-black"
         >
-          {/* Subtle nature mist overlay */}
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(46,125,50,0.1)_0%,transparent_70%)] pointer-events-none" />
+          {/* 1. Full Screen Looping HD Forest Video Background */}
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover -z-20 brightness-[0.35] contrast-[1.1] scale-105"
+          >
+            <source src="/loading_bg.mp4" type="video/mp4" />
+          </video>
 
-          {/* Core Animating Waterfall Ledge container */}
-          <div className="relative w-28 h-40 flex justify-center mb-8">
-            {/* Rocky ledge at top */}
-            <div className="absolute top-0 w-24 h-4 bg-[#0d2315] rounded-full border border-emerald-900/30 z-20" />
-            
-            {/* Cascading falling water streams */}
-            <div className="absolute top-2 w-16 bottom-2 bg-gradient-to-b from-cyan-400 via-teal-400 to-[#05110a] opacity-80 overflow-hidden rounded-b-xl border-x border-cyan-400/20 shadow-lg shadow-cyan-500/10">
-              {/* Flowing overlay lines */}
-              <div className="w-full h-[300%] bg-[linear-gradient(to_bottom,rgba(255,255,255,0.4)_0%,transparent_20%,rgba(128,222,234,0.6)_40%,transparent_60%,rgba(255,255,255,0.4)_80%)] animate-waterfall-loader" />
+          {/* Dark overlay mask */}
+          <div className="absolute inset-0 bg-black/30 dark:bg-black/50 -z-10" />
+
+          {/* 2. Glassmorphic Core Loading Panel */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            className="w-full max-w-md mx-auto px-8 py-10 rounded-3xl border border-white/10 bg-white/5 dark:bg-black/20 backdrop-blur-xl shadow-2xl flex flex-col items-center gap-6"
+          >
+            {/* Pulsing Icon Shield */}
+            <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 animate-pulse">
+              <Compass className="w-8 h-8 animate-spin" style={{ animationDuration: "12s" }} />
             </div>
 
-            {/* Rising mist spray at base */}
-            <div className="absolute bottom-0 w-32 h-10 bg-cyan-400/10 blur-[8px] rounded-full animate-pulse z-25 flex items-center justify-center">
-              <div className="w-24 h-4 bg-white/20 blur-[4px] rounded-full animate-bounce" />
+            {/* Travel Branding */}
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/30 text-[9px] font-bold text-emerald-300 uppercase tracking-widest">
+                <Trees className="w-3 h-3" /> TRAVELPAL SANCTUARY
+              </div>
+              <h2 className="text-2xl font-bold font-title text-white tracking-widest mt-2">
+                TRAVELPAL
+              </h2>
+              <p className="text-[10px] text-white/50 tracking-widest uppercase">
+                Luxury Eco-escapes & Lodging
+              </p>
             </div>
-            
-            {/* Small icon in water center */}
-            <div className="absolute top-[40%] text-cyan-300 animate-pulse z-30">
-              <Droplets className="w-6 h-6 animate-bounce" />
+
+            {/* Dynamic Status message */}
+            <div className="w-full h-8 flex items-center justify-center">
+              <p className="text-xs font-light text-emerald-200/80 italic animate-pulse">
+                {status}
+              </p>
             </div>
-          </div>
 
-          {/* Typography */}
-          <div className="space-y-4 max-w-sm">
-            <div className="inline-flex items-center gap-2 bg-emerald-500/10 px-3.5 py-1 rounded-full border border-emerald-500/20 text-[10px] font-bold text-emerald-400 uppercase tracking-widest animate-pulse">
-              <Trees className="w-3 h-3" /> Entering Sanctuary
-            </div>
-            
-            <h2 className="text-xl font-bold font-title text-emerald-100 tracking-wider">
-              AURA ECO SYSTEMS
-            </h2>
-
-            <p className="text-xs text-emerald-300/70 font-light italic h-4">
-              {status}
-            </p>
-
-            {/* Progress metrics */}
-            <div className="pt-4 space-y-1">
-              <div className="w-48 bg-emerald-950 h-1 rounded-full overflow-hidden mx-auto border border-emerald-900/30">
+            {/* Standard Progress Bar */}
+            <div className="w-full space-y-2 mt-2">
+              <div className="w-full bg-white/10 dark:bg-emerald-950/30 h-2 rounded-full overflow-hidden border border-white/5 relative">
                 <div
-                  className="bg-emerald-400 h-full transition-all duration-100 ease-out"
+                  className="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-100 ease-out shadow-[0_0_8px_rgba(52,211,153,0.5)]"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <span className="text-[10px] font-bold font-mono text-emerald-400/80">{progress}%</span>
+              <div className="flex justify-between items-center text-[10px] font-mono text-emerald-300/80 px-1">
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3 text-emerald-400" /> SECURE GATEWAY
+                </span>
+                <span className="font-bold">{progress}%</span>
+              </div>
             </div>
+          </motion.div>
+
+          {/* Absolute bottom certification label */}
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-4 text-[9px] font-bold tracking-widest text-white/40 uppercase">
+            <span>Carbon Neutral</span>
+            <span>•</span>
+            <span>100% Certified Eco-tourism</span>
           </div>
         </motion.div>
       )}

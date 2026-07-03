@@ -1,31 +1,30 @@
-"use client";
-
-import React, { useRef, useMemo } from "react";
+import React, { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import gsap from "gsap";
+import { useTheme } from "@/context/ThemeContext";
 
 // 1. Swaying Pine Tree Component
-export function SwayingTree({ position, scale = 1, swaySpeed = 1, swayAmount = 0.03 }: {
+export function SwayingTree({ position, scale = 1 }: {
   position: [number, number, number];
   scale?: number;
-  swaySpeed?: number;
-  swayAmount?: number;
 }) {
   const treeRef = useRef<THREE.Group>(null);
-  const randomOffset = useMemo(() => Math.random() * Math.PI * 2, []);
 
-  useFrame((state) => {
+  useEffect(() => {
     if (treeRef.current) {
-      const time = state.clock.getElapsedTime();
-      // Sway animation using sine wave with random offset
-      const swayX = Math.sin(time * swaySpeed + randomOffset) * swayAmount;
-      const swayZ = Math.cos(time * swaySpeed * 0.8 + randomOffset) * (swayAmount * 0.8);
-      
-      // Keep root fixed, rotate from base
-      treeRef.current.rotation.z = swayX;
-      treeRef.current.rotation.x = swayZ;
+      // Staggered wind sway rotation powered by GSAP
+      gsap.to(treeRef.current.rotation, {
+        z: "random(-0.02, 0.02)",
+        x: "random(-0.015, 0.015)",
+        duration: "random(4.5, 7.5)",
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1,
+        repeatRefresh: true
+      });
     }
-  });
+  }, []);
 
   return (
     <group ref={treeRef} position={position} scale={[scale, scale, scale]}>
@@ -71,39 +70,45 @@ export function Mountain({ position, scale = [1, 1, 1], color = "#1e3020" }: {
 export function Waterfall({ position }: { position: [number, number, number] }) {
   const count = 180;
   const meshRef = useRef<THREE.Points>(null);
+  const progressObj = useRef({ val: 0 });
 
-  // Generate initial particle positions and speeds
+  // Generate initial particle positions
   const [positions, speeds] = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const spd = new Float32Array(count);
     for (let i = 0; i < count; i++) {
-      // Spawn at the top ledge
-      pos[i * 3] = position[0] + (Math.random() - 0.5) * 0.7; // Spread on X
-      pos[i * 3 + 1] = position[1] - Math.random() * 8; // Random Y start height
-      pos[i * 3 + 2] = position[2] + (Math.random() - 0.5) * 0.2; // Spread on Z
-      spd[i] = 2.5 + Math.random() * 2.5; // Fall speed
+      pos[i * 3] = position[0] + (Math.random() - 0.5) * 0.7; // Spread X
+      pos[i * 3 + 1] = position[1] - Math.random() * 8; // Spread Y
+      pos[i * 3 + 2] = position[2] + (Math.random() - 0.5) * 0.2; // Spread Z
+      spd[i] = 2.0 + Math.random() * 2.0; // individual speed scaling
     }
     return [pos, spd];
   }, [position]);
 
-  useFrame((state, delta) => {
+  useEffect(() => {
+    // Infinite progress loop for waterfall flow powered by GSAP
+    gsap.to(progressObj.current, {
+      val: 1.0,
+      duration: 1.8,
+      ease: "none",
+      repeat: -1
+    });
+  }, []);
+
+  useFrame((state) => {
     if (meshRef.current) {
       const geo = meshRef.current.geometry;
       const posArray = geo.attributes.position.array as Float32Array;
+      const p = progressObj.current.val;
 
       for (let i = 0; i < count; i++) {
-        // Fall down
-        posArray[i * 3 + 1] -= speeds[i] * delta;
+        // Calculate progressive fall height
+        const offset = (i / count);
+        const fall = ((p + offset) % 1.0);
+        posArray[i * 3 + 1] = position[1] - (fall * 8);
 
-        // Add wind/splash noise
-        posArray[i * 3] += Math.sin(state.clock.getElapsedTime() * 5 + i) * 0.005;
-
-        // Reset if hits bottom reservoir
-        if (posArray[i * 3 + 1] < position[1] - 8) {
-          posArray[i * 3 + 1] = position[1]; // back to top
-          posArray[i * 3] = position[0] + (Math.random() - 0.5) * 0.7;
-          posArray[i * 3 + 2] = position[2] + (Math.random() - 0.5) * 0.2;
-        }
+        // Add small sway/spray offsets
+        posArray[i * 3] = position[0] + Math.sin(state.clock.getElapsedTime() * 4 + i) * 0.05;
       }
       geo.attributes.position.needsUpdate = true;
     }
@@ -396,7 +401,7 @@ export function FloatingClouds({ count = 5 }: { count?: number }) {
 }
 
 // 7. Immersive Floating Forest Globe (Reference template image: 3D Nature Planet)
-export function ForestGlobe({ position = [0, 4.5, -4], scale = 1.3 }: {
+export function ForestGlobe({ position = [0, 0, 0], scale = 1.4 }: {
   position?: [number, number, number];
   scale?: number;
 }) {
@@ -406,7 +411,7 @@ export function ForestGlobe({ position = [0, 4.5, -4], scale = 1.3 }: {
   // Generate random coordinate distributions on a sphere
   const surfaceElements = useMemo(() => {
     const list = [];
-    const count = 50;
+    const count = 75; // More trees & mountains for density
     const r = 2.0; // sphere radius
 
     for (let i = 0; i < count; i++) {
@@ -418,17 +423,17 @@ export function ForestGlobe({ position = [0, 4.5, -4], scale = 1.3 }: {
       const y = r * Math.sin(phi) * Math.sin(theta);
       const z = r * Math.cos(phi);
 
-      // Determine element type: 75% Trees, 25% Mountains
-      const isTree = Math.random() > 0.25;
+      // Determine element type: 80% Trees, 20% Mountains
+      const isTree = Math.random() > 0.20;
 
       list.push({
         id: i,
         position: new THREE.Vector3(x, y, z),
         isTree,
-        scale: isTree ? 0.08 + Math.random() * 0.08 : 0.15 + Math.random() * 0.15,
+        scale: isTree ? 0.08 + Math.random() * 0.08 : 0.14 + Math.random() * 0.14,
         color: isTree 
-          ? (Math.random() > 0.5 ? "#1B5E20" : "#2E7D32") 
-          : "#3b6043",
+          ? (Math.random() > 0.5 ? "#1b5e20" : "#2e7d32") 
+          : "#4e342e", // earthy brown for mountains
         // Quaternion to align Y-axis straight out from center
         quaternion: new THREE.Quaternion().setFromUnitVectors(
           new THREE.Vector3(0, 1, 0),
@@ -439,10 +444,30 @@ export function ForestGlobe({ position = [0, 4.5, -4], scale = 1.3 }: {
     return list;
   }, []);
 
+  // Landmasses representing continents
+  const landmasses = useMemo(() => {
+    const list = [];
+    const count = 10;
+    for (let i = 0; i < count; i++) {
+      const phi = Math.acos(-1 + (2 * i) / count);
+      const theta = Math.sqrt(count * Math.PI) * phi;
+      const r = 1.9;
+      const x = r * Math.sin(phi) * Math.cos(theta);
+      const y = r * Math.sin(phi) * Math.sin(theta);
+      const z = r * Math.cos(phi);
+      list.push({
+        id: i,
+        position: new THREE.Vector3(x, y, z),
+        scale: 0.9 + Math.random() * 0.5
+      });
+    }
+    return list;
+  }, []);
+
   // Orbiting clouds list
   const orbitingClouds = useMemo(() => {
     const list = [];
-    const count = 5;
+    const count = 6;
     for (let i = 0; i < count; i++) {
       const angle = (i / count) * Math.PI * 2;
       const height = (Math.random() - 0.5) * 1.5;
@@ -451,8 +476,8 @@ export function ForestGlobe({ position = [0, 4.5, -4], scale = 1.3 }: {
         angle,
         height,
         radius: 2.8 + Math.random() * 0.4,
-        scale: 0.15 + Math.random() * 0.15,
-        speed: 0.2 + Math.random() * 0.2
+        scale: 0.18 + Math.random() * 0.15,
+        speed: 0.15 + Math.random() * 0.15
       });
     }
     return list;
@@ -461,15 +486,15 @@ export function ForestGlobe({ position = [0, 4.5, -4], scale = 1.3 }: {
   useFrame((state, delta) => {
     if (globeRef.current) {
       // Slow rotation on Y axis
-      globeRef.current.rotation.y += 0.06 * delta;
-      globeRef.current.rotation.x = Math.sin(state.clock.getElapsedTime() * 0.15) * 0.05;
+      globeRef.current.rotation.y += 0.05 * delta;
+      globeRef.current.rotation.x = Math.sin(state.clock.getElapsedTime() * 0.12) * 0.04;
       
       // Gentle floating bobbing effect
-      globeRef.current.position.y = position[1] + Math.sin(state.clock.getElapsedTime() * 0.8) * 0.15;
+      globeRef.current.position.y = position[1] + Math.sin(state.clock.getElapsedTime() * 0.6) * 0.12;
     }
     if (cloudRingRef.current) {
       // Opposite rotation for clouds
-      cloudRingRef.current.rotation.y -= 0.12 * delta;
+      cloudRingRef.current.rotation.y -= 0.08 * delta;
     }
   });
 
@@ -479,16 +504,24 @@ export function ForestGlobe({ position = [0, 4.5, -4], scale = 1.3 }: {
       {/* 1. Core Rotating Planet Globe */}
       <group ref={globeRef}>
         
-        {/* Ocean Sphere base */}
+        {/* Deep Ocean base */}
         <mesh castShadow receiveShadow>
           <sphereGeometry args={[2.0, 32, 32]} />
-          <meshStandardMaterial color="#00bcd4" roughness={0.4} metalness={0.1} flatShading={false} />
+          <meshStandardMaterial color="#0d47a1" roughness={0.3} metalness={0.2} />
         </mesh>
 
         {/* Continents Green Land masses (overlapping slightly larger bumpy spheres) */}
-        <mesh scale={[1.01, 1.01, 1.01]} receiveShadow>
-          <sphereGeometry args={[1.98, 16, 16]} />
-          <meshStandardMaterial color="#388e3c" roughness={0.9} flatShading />
+        {landmasses.map((land) => (
+          <mesh key={land.id} position={land.position} scale={land.scale} receiveShadow castShadow>
+            <sphereGeometry args={[0.9, 16, 16]} />
+            <meshStandardMaterial color="#33691e" roughness={0.9} flatShading />
+          </mesh>
+        ))}
+
+        {/* Atmosphere glow shell */}
+        <mesh scale={[1.08, 1.08, 1.08]}>
+          <sphereGeometry args={[2.0, 32, 32]} />
+          <meshStandardMaterial color="#80deea" transparent opacity={0.15} blending={THREE.AdditiveBlending} side={THREE.BackSide} />
         </mesh>
 
         {/* Distributed low-poly Trees & Mountains aligned outwards */}
@@ -500,21 +533,19 @@ export function ForestGlobe({ position = [0, 4.5, -4], scale = 1.3 }: {
             scale={[el.scale, el.scale, el.scale]}
           >
             {el.isTree ? (
-              // Swaying-like static tree cone pointing straight out
               <group>
                 <mesh castShadow>
-                  <cylinderGeometry args={[0.1, 0.15, 1, 6]} />
-                  <meshStandardMaterial color="#3e2723" roughness={0.9} />
+                  <cylinderGeometry args={[0.08, 0.12, 0.8, 6]} />
+                  <meshStandardMaterial color="#5d4037" roughness={0.9} />
                 </mesh>
-                <mesh position={[0, 1, 0]} castShadow>
-                  <coneGeometry args={[0.8, 1.5, 5]} />
+                <mesh position={[0, 0.7, 0]} castShadow>
+                  <coneGeometry args={[0.6, 1.2, 5]} />
                   <meshStandardMaterial color={el.color} roughness={0.8} flatShading />
                 </mesh>
               </group>
             ) : (
-              // Mountain peak cone
               <mesh castShadow>
-                <coneGeometry args={[1.2, 2, 4]} />
+                <coneGeometry args={[1.0, 1.6, 4]} />
                 <meshStandardMaterial color={el.color} roughness={0.9} flatShading />
               </mesh>
             )}
@@ -525,7 +556,6 @@ export function ForestGlobe({ position = [0, 4.5, -4], scale = 1.3 }: {
       {/* 2. Floating Orbiting Clouds Ring */}
       <group ref={cloudRingRef}>
         {orbitingClouds.map((cloud) => {
-          // Trigonometric positions
           const x = Math.cos(cloud.angle) * cloud.radius;
           const z = Math.sin(cloud.angle) * cloud.radius;
           return (
@@ -610,5 +640,427 @@ export function CloudField({ count = 30 }: { count?: number }) {
     </group>
   );
 }
+
+// 9. Volumetric God Rays Component
+export function GodRays({ count = 8 }: { count?: number }) {
+  const rays = useMemo(() => {
+    const list = [];
+    for (let i = 0; i < count; i++) {
+      list.push({
+        id: i,
+        position: [
+          (Math.random() - 0.5) * 22,
+          7,
+          -8 - Math.random() * 15
+        ] as [number, number, number],
+        scale: [
+          1.0 + Math.random() * 1.8,
+          18 + Math.random() * 8,
+          1.0 + Math.random() * 1.8
+        ] as [number, number, number],
+        rotation: [
+          0.3 + Math.random() * 0.18, // angled downwards towards camera
+          0,
+          (Math.random() - 0.5) * 0.35
+        ] as [number, number, number]
+      });
+    }
+    return list;
+  }, [count]);
+
+  return (
+    <group>
+      {rays.map((ray) => (
+        <mesh
+          key={ray.id}
+          position={ray.position}
+          scale={ray.scale}
+          rotation={ray.rotation}
+        >
+          <cylinderGeometry args={[0.02, 1.4, 1, 8]} />
+          <meshBasicMaterial
+            color="#fffde7"
+            transparent
+            opacity={0.07}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// 10. Fluttering Butterflies
+export function Butterflies({ count = 8 }: { count?: number }) {
+  const groupRef = useRef<THREE.Group>(null);
+
+  const butterflyData = useMemo(() => {
+    const list = [];
+    for (let i = 0; i < count; i++) {
+      list.push({
+        id: i,
+        startPos: [
+          (Math.random() - 0.5) * 10,
+          1 + Math.random() * 2.5,
+          -1 - Math.random() * 7
+        ] as [number, number, number],
+        radius: 0.8 + Math.random() * 1.2,
+        speed: 1.0 + Math.random() * 0.8,
+        color: Math.random() > 0.5 ? "#00e5ff" : "#ffea00",
+        offset: Math.random() * Math.PI * 2
+      });
+    }
+    return list;
+  }, [count]);
+
+  useFrame((state) => {
+    if (groupRef.current) {
+      const time = state.clock.getElapsedTime();
+      groupRef.current.children.forEach((childGroup, idx) => {
+        const data = butterflyData[idx];
+        const angle = time * data.speed + data.offset;
+        
+        // Circular/elliptical movement in XZ plane
+        childGroup.position.x = data.startPos[0] + Math.cos(angle) * data.radius;
+        childGroup.position.z = data.startPos[2] + Math.sin(angle) * data.radius;
+        
+        // Flutter height bounce
+        childGroup.position.y = data.startPos[1] + Math.sin(time * 4.5 + data.offset) * 0.35;
+        
+        // Rotate body to face motion direction
+        childGroup.rotation.y = -angle + Math.PI / 2;
+
+        // Wing flapping: Left wing (index 0), Right wing (index 1) of butterfly inner group
+        const butterflyInner = childGroup.children[0];
+        if (butterflyInner) {
+          const leftWing = butterflyInner.children[0];
+          const rightWing = butterflyInner.children[1];
+          if (leftWing && rightWing) {
+            leftWing.rotation.z = Math.sin(time * 30) * 0.7;
+            rightWing.rotation.z = -Math.sin(time * 30) * 0.7;
+          }
+        }
+      });
+    }
+  });
+
+  return (
+    <group ref={groupRef}>
+      {butterflyData.map((data) => (
+        <group key={data.id}>
+          {/* Inner assembly containing wings and body */}
+          <group>
+            {/* Left Wing */}
+            <mesh position={[-0.06, 0, 0]} rotation={[0, 0, 0.2]}>
+              <boxGeometry args={[0.1, 0.01, 0.08]} />
+              <meshBasicMaterial color={data.color} />
+            </mesh>
+            {/* Right Wing */}
+            <mesh position={[0.06, 0, 0]} rotation={[0, 0, -0.2]}>
+              <boxGeometry args={[0.1, 0.01, 0.08]} />
+              <meshBasicMaterial color={data.color} />
+            </mesh>
+            {/* Body */}
+            <mesh>
+              <cylinderGeometry args={[0.012, 0.012, 0.1, 4]} />
+              <meshBasicMaterial color="#212121" />
+            </mesh>
+          </group>
+        </group>
+      ))}
+    </group>
+  );
+}
+
+// 11. 3D Fjord Wooden Boat Component with GSAP float & sway
+export function FjordBoat({ position = [0, -0.85, 2] }: { position?: [number, number, number] }) {
+  const boatRef = useRef<THREE.Group>(null);
+
+  useEffect(() => {
+    if (boatRef.current) {
+      // Gentle Y-axis floating bounce
+      gsap.to(boatRef.current.position, {
+        y: position[1] + 0.04,
+        duration: 2.5,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1,
+      });
+
+      // Gentle rolling roll-sway (Z-axis)
+      gsap.to(boatRef.current.rotation, {
+        z: 0.03,
+        duration: 3.5,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1,
+      });
+
+      // Gentle pitching sway (X-axis)
+      gsap.to(boatRef.current.rotation, {
+        x: 0.015,
+        duration: 4.2,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: -1,
+      });
+    }
+  }, [position]);
+
+  return (
+    <group ref={boatRef} position={position}>
+      {/* Boat hull base */}
+      <mesh castShadow receiveShadow>
+        <boxGeometry args={[1.4, 0.15, 0.6]} />
+        <meshStandardMaterial color="#5d4037" roughness={0.85} />
+      </mesh>
+      {/* Left Hull Wall */}
+      <mesh position={[0, 0.15, 0.3]} castShadow>
+        <boxGeometry args={[1.4, 0.2, 0.05]} />
+        <meshStandardMaterial color="#4e342e" roughness={0.9} />
+      </mesh>
+      {/* Right Hull Wall */}
+      <mesh position={[0, 0.15, -0.3]} castShadow>
+        <boxGeometry args={[1.4, 0.2, 0.05]} />
+        <meshStandardMaterial color="#4e342e" roughness={0.9} />
+      </mesh>
+      {/* Front Point (Wedge) */}
+      <mesh position={[0.78, 0.1, 0]} rotation={[0, 0, 0.4]} castShadow>
+        <coneGeometry args={[0.3, 0.4, 4]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.9} />
+      </mesh>
+      {/* Back Wall */}
+      <mesh position={[-0.7, 0.15, 0]} castShadow>
+        <boxGeometry args={[0.05, 0.2, 0.6]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.9} />
+      </mesh>
+      {/* Bench Seat inside */}
+      <mesh position={[0, 0.08, 0]}>
+        <boxGeometry args={[0.15, 0.05, 0.55]} />
+        <meshStandardMaterial color="#8d6e63" roughness={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
+// 12. Fjord Water plane
+export function FjordWater() {
+  const { theme } = useTheme();
+  const waterColor = theme === "dark" ? "#002a24" : "#005b4f";
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      // Dynamic shift of lake elevation representing waves
+      meshRef.current.position.y = -1.0 + Math.sin(state.clock.getElapsedTime() * 0.8) * 0.015;
+    }
+  });
+
+  return (
+    <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]} receiveShadow>
+      <planeGeometry args={[150, 150]} />
+      <meshStandardMaterial color={waterColor} roughness={0.15} metalness={0.8} />
+    </mesh>
+  );
+}
+
+// 13. Fjord Mountain Canyon Landscape (Left & Right rock cliffs)
+export function FjordLandscape() {
+  const { theme } = useTheme();
+  const rockColor = theme === "dark" ? "#1e2920" : "#5d5c56";
+
+  return (
+    <group>
+      {/* Left Wall Cliffs */}
+      <group position={[-9, 0, -10]}>
+        <mesh castShadow receiveShadow position={[0, 3, 0]}>
+          <boxGeometry args={[3, 8, 12]} />
+          <meshStandardMaterial color={rockColor} roughness={0.9} flatShading />
+        </mesh>
+        <mesh castShadow receiveShadow position={[1, 5, -6]}>
+          <boxGeometry args={[3.2, 11, 8]} />
+          <meshStandardMaterial color={rockColor} roughness={0.9} flatShading />
+        </mesh>
+      </group>
+
+      {/* Right Wall Cliffs */}
+      <group position={[9, 0, -10]}>
+        <mesh castShadow receiveShadow position={[0, 3, 0]}>
+          <boxGeometry args={[3, 8, 12]} />
+          <meshStandardMaterial color={rockColor} roughness={0.9} flatShading />
+        </mesh>
+        <mesh castShadow receiveShadow position={[-1, 5, -6]}>
+          <boxGeometry args={[3.2, 11, 8]} />
+          <meshStandardMaterial color={rockColor} roughness={0.9} flatShading />
+        </mesh>
+      </group>
+
+      {/* Distant Background Peaks */}
+      <mesh position={[-6, 4, -25]} scale={[4.5, 5.5, 4.5]} castShadow>
+        <coneGeometry args={[3, 6, 4]} />
+        <meshStandardMaterial color={rockColor} roughness={0.95} flatShading />
+      </mesh>
+      <mesh position={[6, 3, -28]} scale={[4.2, 4.8, 4.2]} castShadow>
+        <coneGeometry args={[3, 6, 4]} />
+        <meshStandardMaterial color={rockColor} roughness={0.95} flatShading />
+      </mesh>
+      <mesh position={[0, 5.5, -30]} scale={[5.5, 6.5, 5.5]} castShadow>
+        <coneGeometry args={[3.2, 6, 4]} />
+        <meshStandardMaterial color={rockColor} roughness={0.95} flatShading />
+      </mesh>
+    </group>
+  );
+}
+
+// 14. 3D Forest Stay Cabin (A-frame Cabin) Component
+export function ForestCabin({ position = [0, -0.6, -3] }: { position?: [number, number, number] }) {
+  const cabinLightRef = useRef<THREE.PointLight>(null);
+
+  useEffect(() => {
+    if (cabinLightRef.current) {
+      // Warm pulse from the cabin interior
+      gsap.to(cabinLightRef.current, {
+        intensity: 1.2,
+        duration: 2.8,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut"
+      });
+    }
+  }, []);
+
+  return (
+    <group position={position}>
+      {/* 1. Stone Foundation */}
+      <mesh position={[0, 0.1, 0]} castShadow receiveShadow>
+        <boxGeometry args={[4.2, 0.2, 4.2]} />
+        <meshStandardMaterial color="#4e4d46" roughness={0.9} flatShading />
+      </mesh>
+
+      {/* 2. Wooden Floor Deck */}
+      <mesh position={[0, 0.22, 0.2]} castShadow receiveShadow>
+        <boxGeometry args={[4.0, 0.05, 3.8]} />
+        <meshStandardMaterial color="#8d6e63" roughness={0.8} />
+      </mesh>
+
+      {/* 3. A-Frame Sloping Roof Panels */}
+      {/* Left Roof Panel */}
+      <mesh position={[-1.3, 1.8, 0]} rotation={[0, 0, -Math.PI / 6]} castShadow receiveShadow>
+        <boxGeometry args={[0.12, 3.8, 3.6]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.7} />
+      </mesh>
+      {/* Right Roof Panel */}
+      <mesh position={[1.3, 1.8, 0]} rotation={[0, 0, Math.PI / 6]} castShadow receiveShadow>
+        <boxGeometry args={[0.12, 3.8, 3.6]} />
+        <meshStandardMaterial color="#3e2723" roughness={0.7} />
+      </mesh>
+
+      {/* 4. Wooden Back Wall */}
+      <mesh position={[0, 1.5, -1.6]} castShadow>
+        <boxGeometry args={[2.5, 2.6, 0.1]} />
+        <meshStandardMaterial color="#5d4037" roughness={0.9} />
+      </mesh>
+
+      {/* 5. Glass Front Wall & Door Frame */}
+      <group position={[0, 1.3, 1.6]}>
+        {/* Glass panes */}
+        <mesh castShadow>
+          <boxGeometry args={[2.2, 2.2, 0.05]} />
+          <meshStandardMaterial color="#b2ebf2" transparent opacity={0.3} roughness={0.1} metalness={0.9} />
+        </mesh>
+        {/* Wood Door Frame */}
+        <mesh position={[0, 0, 0.02]} castShadow>
+          <boxGeometry args={[0.1, 2.2, 0.08]} />
+          <meshStandardMaterial color="#3e2723" />
+        </mesh>
+        <mesh position={[0, 0.9, 0.02]} castShadow>
+          <boxGeometry args={[1.2, 0.08, 0.08]} />
+          <meshStandardMaterial color="#3e2723" />
+        </mesh>
+      </group>
+
+      {/* 6. Cozy Interior Light */}
+      <pointLight
+        ref={cabinLightRef}
+        position={[0, 1.2, 0]}
+        intensity={0.7}
+        distance={8}
+        color="#ffb74d"
+        castShadow
+      />
+    </group>
+  );
+}
+
+// 15. Cozy Fire Pit Component with GSAP light flicker
+export function CozyFirePit({ position = [0, -0.4, 1.2] }: { position?: [number, number, number] }) {
+  const fireLightRef = useRef<THREE.PointLight>(null);
+  const flameRef = useRef<THREE.Mesh>(null);
+
+  useEffect(() => {
+    if (fireLightRef.current) {
+      // Realistic randomized fire flame light flicker
+      gsap.to(fireLightRef.current, {
+        intensity: "random(0.6, 1.6)",
+        duration: "random(0.04, 0.18)",
+        repeat: -1,
+        repeatRefresh: true,
+        ease: "sine.inOut"
+      });
+    }
+    if (flameRef.current) {
+      // Flame scale vibration
+      gsap.to(flameRef.current.scale, {
+        x: 1.2,
+        y: 1.4,
+        z: 1.2,
+        duration: 0.12,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut"
+      });
+    }
+  }, []);
+
+  return (
+    <group position={position}>
+      {/* Stone Ring */}
+      <mesh position={[0, 0.02, 0]} castShadow receiveShadow>
+        <torusGeometry args={[0.45, 0.08, 8, 16]} />
+        <meshStandardMaterial color="#616161" roughness={0.95} flatShading />
+      </mesh>
+
+      {/* Charcoal logs */}
+      <mesh position={[0, 0.06, 0]} rotation={[0.2, 0.5, 0]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 0.5]} />
+        <meshStandardMaterial color="#212121" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.06, 0]} rotation={[0.2, -0.6, 0.2]} castShadow>
+        <cylinderGeometry args={[0.04, 0.04, 0.5]} />
+        <meshStandardMaterial color="#212121" roughness={0.9} />
+      </mesh>
+
+      {/* Red/Orange Fire Flame */}
+      <mesh ref={flameRef} position={[0, 0.18, 0]} castShadow>
+        <coneGeometry args={[0.15, 0.4, 4]} />
+        <meshBasicMaterial color="#ff5722" />
+      </mesh>
+
+      {/* Glowing Light Source */}
+      <pointLight
+        ref={fireLightRef}
+        position={[0, 0.3, 0]}
+        intensity={1.0}
+        distance={6}
+        color="#ff7043"
+        castShadow
+      />
+    </group>
+  );
+}
+
+
+
 
 

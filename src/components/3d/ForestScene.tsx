@@ -1,42 +1,86 @@
 "use client";
 
-import React, { Suspense } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import React, { Suspense, useEffect, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTheme } from "@/context/ThemeContext";
 import * as THREE from "three";
+import gsap from "gsap";
 import {
+  SwayingTree,
   FallingLeaves,
   FlyingBirds,
-  ForestGlobe,
   CloudField,
+  GodRays,
+  ForestCabin,
+  CozyFirePit,
+  Waterfall,
 } from "./ForestComponents";
 
-// Camera controller that responds to mouse coordinates for parallax
+// Camera controller that performs a smooth scroll-triggered camera zoom/pan using GSAP focusing on the cabin
 function CameraController() {
+  const { camera } = useThree();
+  const scrollData = useRef({ z: 7.5, y: 1.2 });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      // Calculate scroll progress (0 to 1)
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = scrollHeight > 0 ? window.scrollY / scrollHeight : 0;
+      
+      // GSAP smoothly zooms camera towards the cozy A-frame cabin window on scroll
+      gsap.to(scrollData.current, {
+        z: 7.5 - progress * 4.5, // zooms close to the cabin entrance
+        y: 1.2 - progress * 0.8, // lowers camera viewpoint
+        duration: 1.2,
+        ease: "power2.out",
+        overwrite: "auto"
+      });
+    };
+    
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   useFrame((state) => {
-    // Convert pointer coords (-1 to 1) to camera offset
-    const x = state.pointer.x * 2.5;
-    const y = (state.pointer.y * 1.5) + 3; // Keep camera elevated
+    // Parallax mouse coordinates
+    const mouseX = state.pointer.x * 2.0;
+    const mouseY = (state.pointer.y * 0.8) + scrollData.current.y;
     
-    // Smooth lerp (linear interpolation)
-    state.camera.position.x += (x - state.camera.position.x) * 0.05;
-    state.camera.position.y += (y - state.camera.position.y) * 0.05;
-    
-    // Look towards the center planet
-    state.camera.lookAt(0, 0.2, 0);
+    // Smoothly interpolate camera position
+    camera.position.x += (mouseX - camera.position.x) * 0.05;
+    camera.position.y += (mouseY - camera.position.y) * 0.05;
+    camera.position.z += (scrollData.current.z - camera.position.z) * 0.05;
+
+    // Lock camera orientation looking at the center of the cozy cabin
+    camera.lookAt(0, 0.4, -2.5);
   });
+
   return null;
 }
 
-// Sunrise / Twilight Sun
+// Mossy Ground Terrain
+function MossyGround() {
+  const { theme } = useTheme();
+  // Deep forest green in dark mode, soft mossy green in light mode
+  const groundColor = theme === "dark" ? "#0a1f0f" : "#4caf50";
+
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.6, 0]} receiveShadow>
+      <planeGeometry args={[120, 120]} />
+      <meshStandardMaterial color={groundColor} roughness={0.9} flatShading />
+    </mesh>
+  );
+}
+
+// Background Sun / Moon glow sphere
 function SunSphere() {
   const { theme } = useTheme();
-  const sunColor = theme === "dark" ? "#1e3a24" : "#ffb74d";
+  const sunColor = theme === "dark" ? "#1b3c25" : "#ffe082";
   const sunPosition: [number, number, number] = [0, 8, -25];
 
   return (
     <mesh position={sunPosition}>
-      <sphereGeometry args={[2.5, 32, 32]} />
+      <sphereGeometry args={[3, 32, 32]} />
       <meshBasicMaterial color={sunColor} />
     </mesh>
   );
@@ -45,58 +89,86 @@ function SunSphere() {
 export default function ForestScene() {
   const { theme } = useTheme();
 
-  // Dynamic colors based on Dark/Light theme
-  const fogColor = theme === "dark" ? "#060e0a" : "#e0f2f1";
-  const ambientIntensity = theme === "dark" ? 0.25 : 0.65;
-  const directIntensity = theme === "dark" ? 0.35 : 1.2;
-  const sunlightColor = theme === "dark" ? "#388E3C" : "#fffde7";
+  // Sky environment colors based on active theme
+  const fogColor = theme === "dark" ? "#040c06" : "#e8f5e9";
+  const ambientIntensity = theme === "dark" ? 0.3 : 0.8;
+  const directIntensity = theme === "dark" ? 0.45 : 1.3;
+  const sunlightColor = theme === "dark" ? "#1b5e20" : "#fffde7";
 
   return (
-    <div className="absolute inset-0 w-full h-full -z-10 bg-gradient-to-b from-[#e0f2f1] to-[#b2dfdb] dark:from-[#060e0a] dark:to-[#081f14] transition-colors duration-500">
+    <div className="absolute inset-0 w-full h-full -z-10 bg-gradient-to-b from-[#e8f5e9] to-[#c8e6c9] dark:from-[#040c06] dark:to-[#091a0f] transition-colors duration-500">
       <Canvas
         shadows
-        camera={{ position: [0, 3, 10], fov: 45 }}
+        camera={{ position: [0, 1.2, 7.5], fov: 45 }}
         gl={{ antialias: true }}
       >
         <color attach="background" args={[fogColor]} />
-        <fog attach="fog" args={[fogColor, 8, 30]} />
+        <fog attach="fog" args={[fogColor, 6, 26]} />
 
-        {/* Ambient environment glow */}
+        {/* Ambient forest canopy lighting */}
         <ambientLight intensity={ambientIntensity} />
 
-        {/* Sunlight casting shadows */}
+        {/* Directed sunlight casting shadows */}
         <directionalLight
           castShadow
-          position={[5, 12, 5]}
+          position={[8, 12, -4]}
           intensity={directIntensity}
           color={sunlightColor}
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
           shadow-camera-far={50}
-          shadow-camera-left={-10}
-          shadow-camera-right={10}
-          shadow-camera-top={10}
-          shadow-camera-bottom={-10}
+          shadow-camera-left={-8}
+          shadow-camera-right={8}
+          shadow-camera-top={8}
+          shadow-camera-bottom={-8}
         />
 
-        {/* Local mist glow */}
-        <pointLight position={[0, 4, -4]} intensity={0.5} color="#80deea" />
-
         <Suspense fallback={null}>
-          {/* Environment Elements */}
+          {/* Sun Sphere */}
           <SunSphere />
 
-          {/* Core Floating Forest Globe centered in space */}
-          <ForestGlobe position={[0, 0.2, 0]} scale={1.5} />
+          {/* Grassy Moss Terrain */}
+          <MossyGround />
 
-          {/* Volumetric Cloud Field representing the sky in the template */}
-          <CloudField count={35} />
+          {/* Cozy A-Frame Wooden Stay Cabin */}
+          <ForestCabin position={[0, -0.6, -2.5]} />
 
-          {/* Dynamic weather particles & soaring birds */}
-          <FallingLeaves count={80} />
-          <FlyingBirds count={8} />
+          {/* Cozy Fire Pit with flame & flickering light */}
+          <CozyFirePit position={[0, -0.5, 0.8]} />
 
-          {/* Camera movement controller */}
+          {/* Background Waterfall Ledge & Stream (driven by GSAP progress timeline) */}
+          <mesh position={[0, 2.8, -12]} castShadow receiveShadow>
+            <boxGeometry args={[4, 1.2, 2]} />
+            <meshStandardMaterial color={theme === "dark" ? "#1e2920" : "#5d5c56"} roughness={0.9} />
+          </mesh>
+          <Waterfall position={[0, 2.2, -11]} />
+
+          {/* DENSE SWAYING PINE FORESTS (Framing left & right margins, swaying under wind via GSAP tweens) */}
+          {/* Left Forest Canopy */}
+          <SwayingTree position={[-3.8, -0.6, 3]} scale={1.05} />
+          <SwayingTree position={[-4.5, -0.6, 0]} scale={1.2} />
+          <SwayingTree position={[-3.5, -0.6, -3]} scale={1.0} />
+          <SwayingTree position={[-5.2, -0.6, -6]} scale={1.3} />
+          <SwayingTree position={[-4.0, -0.6, -9]} scale={1.1} />
+
+          {/* Right Forest Canopy */}
+          <SwayingTree position={[3.8, -0.6, 3]} scale={1.0} />
+          <SwayingTree position={[4.5, -0.6, 0]} scale={1.25} />
+          <SwayingTree position={[3.5, -0.6, -3]} scale={1.05} />
+          <SwayingTree position={[5.2, -0.6, -6]} scale={1.35} />
+          <SwayingTree position={[4.0, -0.6, -9]} scale={1.15} />
+
+          {/* Volumetric cloud field drifting dynamically in the sky (motion clouds) */}
+          <CloudField count={30} />
+
+          {/* Volumetric God rays passing through the branches */}
+          <GodRays count={6} />
+
+          {/* Soaring birds & drifting pollen particles */}
+          <FallingLeaves count={50} />
+          <FlyingBirds count={6} />
+
+          {/* Camera panning & GSAP scroll parallax */}
           <CameraController />
         </Suspense>
       </Canvas>

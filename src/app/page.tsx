@@ -83,8 +83,20 @@ export default function Home() {
         <IntroLoader onComplete={() => setIsIntroComplete(true)} />
       )}
 
-      {/* 3D Immersive Canvas overlaying background */}
-      <ForestScene />
+      {/* Cinematic Looping Video Background (Foggy Forest Canopy) */}
+      <div className="fixed inset-0 w-full h-full -z-10 overflow-hidden bg-[#020804]">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover brightness-[0.45] dark:brightness-[0.35] contrast-[1.1] transition-all duration-700"
+        >
+          <source src="/website_bg.mp4" type="video/mp4" />
+        </video>
+        {/* Ambient overlay to protect readability */}
+        <div className="absolute inset-0 bg-black/15 dark:bg-black/45 backdrop-blur-[0.5px] transition-colors duration-500" />
+      </div>
 
       {/* Floating Header Navbar */}
       <Navbar

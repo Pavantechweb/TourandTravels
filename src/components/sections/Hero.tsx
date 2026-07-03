@@ -34,31 +34,33 @@ export default function Hero() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="inline-flex items-center gap-2 bg-forest/10 dark:bg-emerald-500/10 px-4 py-1.5 rounded-full border border-forest/20 dark:border-emerald-500/25 mb-6"
+          className="inline-flex items-center gap-2 bg-emerald-500/20 px-4 py-1.5 rounded-full border border-emerald-500/30 mb-6 drop-shadow-md"
         >
-          <span className="w-2 h-2 rounded-full bg-forest dark:bg-emerald-400 animate-ping" />
-          <span className="text-xs font-bold tracking-widest text-forest dark:text-emerald-400 uppercase">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          <span className="text-xs font-bold tracking-widest text-emerald-300 uppercase">
             Luxury Eco-Tourism Evolved
           </span>
         </motion.div>
-
+ 
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
-          className="text-4xl sm:text-6xl md:text-8xl font-title font-bold tracking-tight leading-tight md:leading-none text-foreground dark:text-white"
+          className="text-4xl sm:text-6xl md:text-8xl font-title font-bold tracking-tight leading-tight md:leading-none text-white drop-shadow-[0_4px_8px_rgba(0,0,0,0.6)]"
         >
-          Discover Nature <br />
-          <span className="text-gradient-forest">Like Never Before</span>
+          Discover Your <br />
+          <span className="bg-gradient-to-r from-emerald-300 to-teal-200 bg-clip-text text-transparent drop-shadow-[0_2px_4px_rgba(0,0,0,0.3)]">
+            Next Adventure
+          </span>
         </motion.h1>
-
+ 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.2, delay: 0.5 }}
-          className="text-base sm:text-lg md:text-xl text-foreground/80 dark:text-emerald-100/70 max-w-2xl mx-auto mt-6 font-light leading-relaxed"
+          className="text-base sm:text-lg md:text-xl text-zinc-100/90 max-w-2xl mx-auto mt-6 font-light leading-relaxed drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
         >
-          Escape the noise. Walk through misty green valleys, climb towering ridges, and rest near pristine roaring waterfalls. Indulge in 100% carbon-neutral luxury.
+          Find the best tours and travel packages for your dream destinations, ensuring unforgettable experiences.
         </motion.p>
       </div>
 

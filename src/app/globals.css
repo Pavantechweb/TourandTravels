@@ -18,18 +18,18 @@
 
 :root {
   --background: #f4f7f6;
-  --foreground: #1c2e24;
-  --card-bg: rgba(255, 255, 255, 0.7);
-  --card-border: rgba(255, 255, 255, 0.4);
+  --foreground: #111e17;
+  --card-bg: rgba(255, 255, 255, 0.94);
+  --card-border: rgba(255, 255, 255, 0.55);
   --shadow-color: rgba(27, 94, 32, 0.08);
 }
 
 .dark {
-  --background: #060e0a;
-  --foreground: #eef5f0;
-  --card-bg: rgba(6, 14, 10, 0.6);
-  --card-border: rgba(255, 255, 255, 0.08);
-  --shadow-color: rgba(0, 0, 0, 0.3);
+  --background: #040906;
+  --foreground: #f0f7f2;
+  --card-bg: rgba(7, 16, 11, 0.91);
+  --card-border: rgba(255, 255, 255, 0.1);
+  --shadow-color: rgba(0, 0, 0, 0.35);
 }
 
 * {
