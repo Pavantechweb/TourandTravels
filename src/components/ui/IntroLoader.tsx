@@ -57,16 +57,11 @@ export default function IntroLoader({ onComplete }: { onComplete: () => void }) 
           transition={{ duration: 0.8, ease: "easeInOut" }}
           className="fixed inset-0 w-screen h-screen z-[100] flex flex-col items-center justify-center text-center p-0 m-0 select-none overflow-hidden bg-black"
         >
-          {/* 1. Full Screen Looping HD Forest Video Background */}
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover -z-20 brightness-[0.35] contrast-[1.1] scale-105"
-          >
-            <source src="/loading_bg.mp4" type="video/mp4" />
-          </video>
+          {/* 1. Full Screen HD Forest Sunrise Background (Watermark-free) */}
+          <div
+            className="absolute inset-0 w-full h-full bg-cover bg-center -z-20 brightness-[0.38] contrast-[1.1] scale-105 transition-all duration-700"
+            style={{ backgroundImage: "url('/loading_bg.jpg')" }}
+          />
 
           {/* Dark overlay mask */}
           <div className="absolute inset-0 bg-black/30 dark:bg-black/50 -z-10" />
